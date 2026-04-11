@@ -1,0 +1,9 @@
+numpy
+matplotlib
+h5py
+xarray
+scipy
+
+# Pencil Code Python tools (install separately if needed)
+
+# e.g. from source: https://github.com/pencil-code/pencil-code

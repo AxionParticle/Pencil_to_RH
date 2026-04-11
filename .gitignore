@@ -1,0 +1,26 @@
+# DATA (DO NOT UPLOAD)
+data/
+output/
+
+# Large files
+*.hdf5
+*.h5
+*.dat
+
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Logs
+*.log
