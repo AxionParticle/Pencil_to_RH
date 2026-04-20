@@ -3,6 +3,7 @@ matplotlib
 h5py
 xarray
 scipy
+xdrlib3
 
 # Pencil Code Python tools (install separately if needed)
 

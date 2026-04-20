@@ -1,38 +1,62 @@
-# Pencil Code → RH 1.5D Pipeline
+# Pencil Code → RH Pipeline (1.5D & 3D)
 
-This repository provides a pipeline to convert 3D MHD simulation data from the Pencil Code into column-by-column input suitable for the RH 1.5D radiative transfer code.
+This repository provides a modular pipeline to convert 3D MHD simulation data from the Pencil Code into input suitable for the RH radiative transfer code.
 
-It is designed for studying radiative transfer in solar/astrophysical atmospheres, including spectral line formation such as Hα and continuum diagnostics.
+It supports both:
+
+* **RH 1.5D** (column-by-column radiative transfer)
+* **RH 3D (XDR format)** for full atmosphere cubes
+
+The pipeline is designed for solar and astrophysical applications, including spectral line formation (e.g., Hα) and chromospheric diagnostics.
 
 ---
 
 ## 🔬 Overview
 
-The Pencil Code produces fully compressible MHD simulations in 3D. However, the RH 1.5D code operates in a 1.5D framework, requiring independent vertical columns as input.
+The Pencil Code produces fully compressible 3D MHD simulations. Radiative transfer modeling with RH requires structured atmospheric input:
 
-This pipeline:
+* **RH 1.5D** → independent vertical columns
+* **RH 3D** → full 3D atmosphere cube (XDR format)
 
-* Reads Pencil Code simulation snapshots
-* Extracts physical variables (e.g., density, temperature, velocity)
-* Converts them into RH 1.5D-compatible atmospheric columns
-* Processes multiple snapshots efficiently
-* Provides visualization tools for validation
+This repository bridges that gap.
+
+### Features
+
+* Read Pencil Code snapshots (`var` files)
+* Convert simulation units → physical units
+* Extract atmospheric variables:
+
+  * Temperature (T)
+  * Density (ρ)
+  * Velocity (vx, vy, vz)
+  * Ionization fraction (yH)
+* Compute:
+
+  * Electron density (ne)
+  * Hydrogen populations (nH⁰, nH⁺)
+* Height filtering and subcube extraction
+* RH-compatible output:
+
+  * HDF5 (1.5D)
+  * XDR (3D)
+* Validation plots (2D + 1D)
 
 ---
 
 ## 📂 Repository Structure
 
-```
+```id="tree1"
 pencil-to-rh/
 │
-├── scripts/              # Core processing scripts
-│   ├── read_pencil.py
-│   ├── convert_to_rh.py
-│   └── plot_results.py
+├── scripts/
+│   ├── read_pencil.py          # Read + validate Pencil data
+│   ├── convert_to_rh.py        # RH 1.5D (HDF5)
+│   ├── convert_to_rh_3d.py     # RH 3D (XDR)
+│   └── plot_results.py         # Visualization tools
 │
-├── notebooks/            # (Recommended to use) Jupyter notebooks
-├── data/                 # Pencil Code outputs
-├── output/               # RH results
+├── notebooks/                  # Recommended
+├── data/                       # Pencil outputs
+├── output/                     # RH outputs
 │
 ├── README.md
 ├── requirements.txt
@@ -43,37 +67,77 @@ pencil-to-rh/
 
 ## ⚙️ Requirements
 
-Install dependencies using:
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Main libraries:
+### Main libraries
 
 * numpy
 * matplotlib
 * h5py
-* xarray
+* scipy
+* xdrlib3
 * Pencil Code Python tools
+
+> Pencil Code tools must be installed separately from source.
 
 ---
 
 ## 🚀 Usage
 
-### 1. Read Pencil Code Data
+### 1. Read and validate Pencil data
 
 ```bash
 python scripts/read_pencil.py
 ```
 
-### 2. Convert to RH Input Format
+Generates:
+
+* 2D slices
+* 1D vertical profiles
+* sanity checks for T, ne, velocity
+
+---
+
+### 2. Convert to RH 1.5D (HDF5)
 
 ```bash
 python scripts/convert_to_rh.py
 ```
 
-### 3. Plot / Validate Results
+Output:
+
+```
+output/rh_atmosphere.hdf5
+```
+
+---
+
+### 3. Convert to RH 3D (XDR)
+
+```bash
+python scripts/convert_to_rh_3d.py
+```
+
+Output:
+
+```
+output/rh_3d.atmos
+```
+
+Features:
+
+* Optional height filtering
+* Optional subcube extraction
+* Full 3D atmosphere preserved
+* 2-level hydrogen populations
+
+---
+
+### 4. Plot RH results
 
 ```bash
 python scripts/plot_results.py
@@ -81,47 +145,109 @@ python scripts/plot_results.py
 
 ---
 
-## 📊 Output
+## 📊 Output Description
 
-The pipeline generates:
+### RH 1.5D (HDF5)
 
-* Column-by-column atmospheric models for RH 1.5D
-* Derived quantities such as:
+* Temperature
+* Electron density
+* Velocity (vz)
+* Hydrogen populations
+* Grid coordinates (x, y, z)
 
-  * Optical depth (τ)
-  * τ = 1 height maps
-* Visualization plots for sanity checks
+### RH 3D (XDR)
+
+* Full 3D cube:
+
+  * T(x,y,z)
+  * ne(x,y,z)
+  * v(x,y,z)
+  * nH⁰, nH⁺
+* Grid spacing and height scale
+* Compatible with RH 3D setup
+
+---
+
+## ⚙️ Configuration (3D pipeline)
+
+Inside `convert_to_rh_3d.py`:
+
+```python
+USE_HEIGHT_FILTER = True
+USE_SUBCUBE = True
+```
+
+### Height filtering
+
+```python
+Z_MIN = -0.3e6
+Z_MAX = 15e6
+```
+
+### Subcube selection
+
+```python
+X_RANGE = (80, 112, 1)
+Y_RANGE = (80, 112, 1)
+```
 
 ---
 
 ## 🧠 Scientific Context
 
-This work is relevant for:
+This pipeline is relevant for:
 
-* Solar chromosphere forward modeling
+* Solar chromosphere modelling
 * Radiative transfer in MHD simulations
 * Spectral line formation (e.g., Hα)
-* Coupling MHD simulations with radiative diagnostics
+* Coupling numerical simulations with radiative diagnostics
 
 ---
 
-## ⚠️ Notes
+## ⚠️ Important Notes
 
-* Large simulation data is not included in this repository.
-* Ensure correct units and normalization when converting variables.
-* RH 1.5D requires careful formatting of atmospheric inputs — verify outputs before running radiative transfer.
+* Large simulation data is **not included** in this repository
+* Ensure consistent units during conversion
+* RH requires:
+
+  * Correct ordering (top → observer)
+  * Proper normalisation of populations
+
+### RH 3D considerations
+
+* Computationally expensive (memory-heavy)
+* Often used with reduced domains (subcubes)
+* May still assume column-wise radiative transfer depending on the setup
+
+---
+
+## 🔬 Limitations / Future Work
+
+* Hydrogen is treated as a **2-level atom**
+* No multi-level NLTE populations yet
+* No spectral synthesis included (e.g., Hα intensity)
+
+### Planned extensions
+
+* τ = 1 height maps
+* Multi-level hydrogen atom
+* Spectral synthesis (RH outputs → intensity)
+* Batch processing of multiple snapshots
 
 ---
 
 ## 👤 Author
 
-Sanket Wavhal
+**Sanket Wavhal**
 Integrated B.Tech + M.Tech (Engineering Physics)
 IIT (BHU), Varanasi
-Email: wavhal.sankets.phy20@itbhu.ac.in , sanketwavhal7@gmail.com 
+
+Email:
+[wavhal.sankets.phy20@itbhu.ac.in](mailto:wavhal.sankets.phy20@itbhu.ac.in)
+[sanketwavhal7@gmail.com](mailto:sanketwavhal7@gmail.com)
 
 ---
 
 ## 📜 License
 
-This project is open for academic and research use.
+This project is intended for academic and research use.
